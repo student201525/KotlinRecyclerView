@@ -20,6 +20,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val recyclerView: RecyclerView = findViewById(R.id.recyclerview)
+        recyclerView.layoutManager = LinearLayoutManager(this)
+
+
         Thread(Runnable {
             val client = OkHttpClient()
             val request = Request.Builder()
@@ -28,23 +32,18 @@ class MainActivity : AppCompatActivity() {
             val response = client.newCall(request).execute()
             val responseText = response.body()!!.string()
             val repos = Gson().fromJson(responseText, GitHubRepositoryInfo.List::class.java)
+
             android.util.Log.d("Repos", repos.joinToString { it.name })
+
+            runOnUiThread {
+                recyclerView.adapter = Adapter(repos)
+            }
+
         }).start()
 
-        val recyclerView: RecyclerView = findViewById(R.id.recyclerview)
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        recyclerView.adapter = Adapter(generateFakeValues())
     }
 
-    private fun generateFakeValues(): List<String> {
-        val values = mutableListOf<String>()
-        for (i in 0..100) {
-            values.add("$i element")
-        }
-        return values
-    }
-
-    class Adapter(private val values: List<String>) : RecyclerView.Adapter<Adapter.ViewHolder>() {
+    class Adapter(val values: ArrayList<GitHubRepositoryInfo>) : RecyclerView.Adapter<Adapter.ViewHolder>() {
 
         override fun getItemCount() = values.size
 
@@ -54,7 +53,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun onBindViewHolder(holder: ViewHolder?, position: Int) {
-            holder?.textView?.text = values[position]
+            holder?.textView?.text = values[position].name
         }
 
         class ViewHolder(itemView: View?) : RecyclerView.ViewHolder(itemView) {
@@ -63,6 +62,7 @@ class MainActivity : AppCompatActivity() {
             init {
                 textView = itemView?.findViewById(R.id.text_list_item)
             }
+
         }
     }
 
